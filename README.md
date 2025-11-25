@@ -22,9 +22,9 @@ queries over a DuckDB database containing ~3000 fungal genomes.
 - database/ # DuckDB database files (ignored)
 
 ## Setup
-conda create -n adk python=3.10
-conda activate adk
-pip install google-adk duckdb pandas
+- conda create -n adk python=3.10
+- conda activate adk
+- pip install google-adk duckdb pandas
 
 ## Running
 adk run

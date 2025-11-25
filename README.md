@@ -1,4 +1,4 @@
-# FungiBot – Agentic SQL Analysis System for Fungal Genomes
+# FungiBot - Agentic SQL Analysis System for Fungal Genomes
 
 FungiBot is an agent built using Google ADK that enables natural language
 queries over a DuckDB database containing ~3000 fungal genomes.

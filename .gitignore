@@ -1,0 +1,25 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# ADK environment files
+.env
+*.sqlite
+*.db
+*.duckdb
+*.cache
+
+# OS junk
+.DS_Store
+
+# Logs
+*.log
+
+# Virtual environments (if created locally)
+venv/
+.env/
+.adk/
+
+# Jupyter checkpoints (if you add notebooks later)
+.ipynb_checkpoints
+

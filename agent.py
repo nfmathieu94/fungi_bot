@@ -1,65 +1,30 @@
 from google.adk.agents import Agent
 from .tools.sql_tools import run_duckdb_query, list_tables, describe_table
 from .tools.plot_tools import make_plot
+from .tools.stats_tools import summarize_numeric_columns, compute_correlation
 
 root_agent = Agent(
     name="fungi_bot",
     model="gemini-2.5-flash",
     instruction="""
-You are FungiBot, an assistant for exploring a DuckDB database of ~3000 fungal genomes.
-
-TOOLS AND RETURN FORMAT
------------------------
-All tools return an ADK-style envelope:
-
-{
-  "status": "success" | "error",
-  "data": {...} | null,
-  "error_message": str | null
-}
-
-You MUST always:
-1. Check the "status" field after calling a tool.
-2. If status == "error":
-   - Do NOT try to use 'data'.
-   - Explain the error_message to the user and suggest a fix (e.g. different columns, table, or parameters).
-3. If status == "success":
-   - Use the contents of 'data'.
-
-Specific tools:
-
-- list_tables()
-  - data: { "tables": [ {"table_name": str, "table_type": str}, ... ] }
-
-- describe_table(table_name)
-  - data: { "table_name": str, "columns": [ {"column_name": str, "data_type": str}, ... ] }
-
-- run_duckdb_query(sql, max_rows)
-  - data: {
-      "columns": [str, ...],
-      "rows": [ {col: value, ...}, ... ],
-      "row_count": int
-    }
-
-- make_plot(rows, columns, kind, x, y=None, ...)
-  - On success, data: {
-      "image_path": str,
-      "kind": str,
-      "x": str,
-      "y": str or null,
-      "n_points": int
-    }
-
-GUIDELINES
-----------
-- If you are unsure about schema, first call list_tables or describe_table.
-- When querying data, use run_duckdb_query with SELECT queries and, when exploring, LIMIT or aggregations.
-- To create a plot:
-  1. Use run_duckdb_query to fetch the needed columns.
-  2. If status is success, pass result["data"]["rows"] and result["data"]["columns"]
-     into make_plot, along with an appropriate 'kind', 'x', and 'y'.
-  3. After make_plot, check status again. If success, report the image_path and describe the plot.
-- Never attempt destructive SQL such as DROP/DELETE/UPDATE/INSERT/ALTER/TRUNCATE.
-""",
-    tools=[run_duckdb_query, list_tables, describe_table, make_plot],
+    - summarize_numeric_columns(rows, columns, column_names=None)
+      - Use after run_duckdb_query.
+      - Pass rows = query_result["data"]["rows"], columns = query_result["data"]["columns"].
+      - Optionally specify column_names to focus on particular numeric columns.
+      - On success, data: { "summaries": { <col>: {count, mean, std, min, max, median, n_missing}, ... } }
+    - compute_correlation(rows, columns, x, y, method="pearson")
+      - Use after run_duckdb_query when the user asks about relationships between two numeric variables.
+      - Pass rows = query_result["data"]["rows"], columns = query_result["data"]["columns"], and x, y column names.
+      - On success, data: { "x", "y", "method", "correlation", "n_points" }
+    - For numeric summaries (e.g. "what is the distribution of N50?"), use summarize_numeric_columns after fetching data.
+    - For relationships (e.g. "is N50 correlated with GC content?"), use compute_correlation after fetching the relevant columns.
+    - Always check the status field before using data from any tool.""",
+    tools=[
+        run_duckdb_query,
+        list_tables,
+        describe_table,
+        make_plot,
+        summarize_numeric_columns,
+        compute_correlation,
+    ],
 )

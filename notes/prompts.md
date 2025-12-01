@@ -16,12 +16,27 @@ agent tools.
 
 ## Plotting Test
 
-`[user]: Use run_duckdb_query to select N50 and GC_PERCENT from asm_stats and then use make_plot 
+[user]: Use run_duckdb_query to select N50 and GC_PERCENT from asm_stats and then use make_plot 
 to create a scatter plot ('scatter') with x = N50 and y = GC_PERCENT. Tell me the 
-image_path and briefly describe what the plot shows.`
+image_path and briefly describe what the plot shows.
 
-`[fungi_bot]: The scatter plot showing N50 versus GC_PERCENT has been saved to 
-`/bigdata/stajichlab/nmath020/adk_projects/fungi_bot/figures/scatter_N50_vs_GC_PERCENT_20251128_092655.png`. 
-The plot displays the distribution of GC_PERCENT across a wide range of N50 values, 
-with the N50 axis on a logarithmic scale. It appears there is a cluster of points with N50 values 
-ranging from approximately 10^4 to 10^7, and GC_PERCENT values mostly between 40% and 60%, with some outliers.`
+
+## Stats Test
+
+[user]: Use run_duckdb_query to select N50 and GC_PERCENT from asm_stats (with a LIMIT if needed). Then use compute_correlation with method="pearson" to measure the correlation between N50 and GC_PERCENT. Check status at each step, then report the correlation and interpret its strength and direction.
+
+[user]: Use run_duckdb_query to select N50 and TOTAL_LENGTH from asm_stats with a reasonable LIMIT (e.g. 1000). Then use summarize_numeric_columns on the result to summarize both columns. Check the status fields. Finally, explain the summaries in plain language.
+
+## Workflow Test
+
+### Assembly Comparison
+
+[user]: Give me a high-level overview of assembly quality using asm_stats, including
+summary statistics for N50 and TOTAL_LENGTH, a correlation between them,
+and at least one plot. Use assembly_quality_overview and explain the results.
+
+### Genome and Lifestyle Comparison
+
+[user]: Use your genome_lifestyle_overview workflow to compare genome size and N50
+across ecological guilds. Then summarize which guilds tend to have larger genomes
+or more contiguous assemblies, and tell me the boxplot image paths.

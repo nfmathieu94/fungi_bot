@@ -39,6 +39,7 @@ def make_plot(
     log_x: bool = False,
     log_y: bool = False,
     bins: int = 30,
+    hue: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Create a simple plot from tabular data.
@@ -46,13 +47,14 @@ def make_plot(
     Args:
         rows: List of row dicts (typically from run_duckdb_query["data"]["rows"]).
         columns: List of column names (run_duckdb_query["data"]["columns"]).
-        kind: Type of plot. One of: "hist", "scatter".
+        kind: Type of plot. One of: "hist", "scatter", "box".
         x: Column name for x-axis.
-        y: Column name for y-axis (required for "scatter").
+        y: Column name for y-axis (required for "scatter" and "box").
         title: Optional plot title.
         log_x: Whether to use log scale on x-axis.
         log_y: Whether to use log scale on y-axis.
         bins: Number of bins for histograms.
+        hue: Optional column name used for grouping/colors (for "scatter" and "box").
 
     Returns:
         ADK-style result dict:
@@ -63,6 +65,7 @@ def make_plot(
             "kind": str,
             "x": str,
             "y": str | None,
+            "hue": str | None,
             "n_points": int
           } | None,
           "error_message": str | None
@@ -75,7 +78,7 @@ def make_plot(
         df = pd.DataFrame(rows)
 
         # Validate requested columns
-        for col in [x, y]:
+        for col in [x, y, hue]:
             if col is not None and col not in df.columns:
                 return _error(
                     f"Requested column '{col}' not found in data. "
@@ -85,7 +88,12 @@ def make_plot(
         os.makedirs(FIG_DIR, exist_ok=True)
 
         timestamp = time.strftime("%Y%m%d_%H%M%S")
-        fname = f"{kind}_{x}" + (f"_vs_{y}" if y else "") + f"_{timestamp}.png"
+        fname_parts = [kind, x]
+        if y:
+            fname_parts.append(f"vs_{y}")
+        if hue:
+            fname_parts.append(f"by_{hue}")
+        fname = "_".join(fname_parts) + f"_{timestamp}.png"
         out_path = os.path.join(FIG_DIR, fname)
 
         plt.figure(figsize=(8, 6))
@@ -104,17 +112,65 @@ def make_plot(
             x_data = pd.to_numeric(df[x], errors="coerce")
             y_data = pd.to_numeric(df[y], errors="coerce")
             mask = x_data.notna() & y_data.notna()
+
             if mask.sum() == 0:
                 return _error(
                     f"No valid numeric data found for scatter plot with '{x}' and '{y}'."
                 )
-            plt.scatter(x_data[mask], y_data[mask], alpha=0.6)
+
+            if hue is not None:
+                # Color by category in hue
+                categories = df.loc[mask, hue].astype(str)
+                # Assign a color index per category
+                cat_codes, uniques = pd.factorize(categories)
+                scatter = plt.scatter(
+                    x_data[mask],
+                    y_data[mask],
+                    c=cat_codes,
+                    alpha=0.6,
+                )
+                # Add a legend with category labels
+                handles, _ = scatter.legend_elements(num=len(uniques))
+                plt.legend(handles, list(uniques), title=hue)
+            else:
+                plt.scatter(x_data[mask], y_data[mask], alpha=0.6)
+
             plt.xlabel(x)
             plt.ylabel(y)
 
+        elif kind == "box":
+            if y is None:
+                return _error("Box plot requires both x (category) and y (numeric).")
+
+            y_num = pd.to_numeric(df[y], errors="coerce")
+            # Keep rows with valid numeric y
+            plot_df = df.copy()
+            plot_df[y] = y_num
+            plot_df = plot_df.dropna(subset=[y])
+
+            if plot_df.empty:
+                return _error(
+                    f"No valid numeric data found in column '{y}' for box plot."
+                )
+
+            if hue is not None:
+                # Grouped boxplot: hue as additional category dimension
+                # For simplicity, build a combined category for x+hue
+                plot_df["_group"] = plot_df[x].astype(str) + " | " + plot_df[hue].astype(
+                    str
+                )
+                plot_df.boxplot(column=y, by="_group", rot=90)
+                plt.xlabel(f"{x} | {hue}")
+            else:
+                plot_df.boxplot(column=y, by=x, rot=90)
+                plt.xlabel(x)
+
+            plt.ylabel(y)
+            plt.suptitle("")  # Remove default pandas boxplot title
+
         else:
             return _error(
-                f"Unsupported plot kind '{kind}'. Supported kinds: 'hist', 'scatter'."
+                f"Unsupported plot kind '{kind}'. Supported kinds: 'hist', 'scatter', 'box'."
             )
 
         if title:
@@ -135,6 +191,7 @@ def make_plot(
                 "kind": kind,
                 "x": x,
                 "y": y,
+                "hue": hue,
                 "n_points": len(df),
             }
         )

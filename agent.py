@@ -204,6 +204,39 @@ Typical usage patterns:
     * Use run_duckdb_query to get a numeric column and a categorical column (and optional hue).
     * Then make_plot(kind="box", x="<category>", y="<numeric>", hue="<optional grouping>").
 
+=================
+WORKFLOWS
+=================
+Some workflow tools may return an `analysis_record` inside their `data` payload.
+This is a structured summary of the analysis that is also saved into a local
+analysis history database (separate from the main fungal DuckDB).
+
+When a workflow tool returns an `analysis_record` in its data, you MUST:
+
+1. Use the `analysis_record` to produce a short, human-readable summary of the
+   analysis in your final answer. Mention, for example:
+   - How many genomes/rows were analyzed.
+   - Key statistics (e.g., medians, correlations).
+   - Which plots were created (by filename or path).
+
+2. Optionally, at the END of your answer, you MAY include a clearly delimited
+   JSON block labeled:
+
+   === Analysis record for memory (do not edit) ===
+   <analysis_record_json>
+
+   Where:
+   - <analysis_record_json> is the `analysis_record` dict serialized as valid JSON.
+   - Do NOT change field names or structure if you include it.
+   - Do NOT add comments or extra keys.
+   - Ensure it is valid JSON (double quotes, no trailing commas).
+
+   This block is intended for future long-term memory integrations or external
+   tools that may parse your responses.
+
+3. If no `analysis_record` is present in the tool result, answer normally and
+   do NOT invent or fabricate one.
+
 7) assembly_quality_overview(limit: int = 1000)
 -----------------------------------------------
 High-level workflow that:
@@ -218,7 +251,9 @@ High-level workflow that:
       * numeric summaries,
       * correlation info,
       * plot metadata and image paths,
-      * any sub-step error messages.
+      * any sub-step error messages,
+      * an optional `analysis_record` field for long-term history,
+      * status information about saving to the local analysis history database.
 
 Return on success:
 - data: {
@@ -233,7 +268,21 @@ Return on success:
       "n50_hist_error": str or None,
       "n50_vs_total_scatter": {...} or None,
       "n50_vs_total_scatter_error": str or None
-    }
+    },
+    "analysis_record": {
+      "type": "fungibot_analysis",
+      "app_name": "fungi_bot",
+      "user_id": str,
+      "workflow_name": "assembly_quality_overview",
+      "created_at": str (ISO 8601),
+      "params": {...},
+      "summary_text": str,
+      "result_stats": {...},
+      "figure_paths": [str, ...],
+      "tags": [str, ...]
+    } or None,
+    "history_save_status": "success" | "error" | None,
+    "history_save_error": str | None
   }
 
 Usage:
@@ -242,6 +291,9 @@ Usage:
   assembly_quality_overview instead of manually chaining multiple tools.
 - After calling this workflow, read any *_error fields before relying
   on the corresponding summaries, correlations, or plots.
+- If `analysis_record` is present, use it to summarize the analysis for the user.
+  The record is already saved to a separate analysis history database; the
+  JSON block is optional and mainly for future memory integrations.
 
 
 8) genome_lifestyle_overview
@@ -263,8 +315,12 @@ Usage:
     * n_rows, n_guilds
     * guild_stats: per-guild summary stats
     * plots: paths to boxplot images
+    * (In the future, this workflow may also include an analysis_record field,
+       which you should handle the same way as in assembly_quality_overview.)
+
   - Use this when the user asks about how genome size / assembly contiguity varies
     among ecological guilds or lifestyles.
+
 
 =================
 OVERALL GUIDELINES

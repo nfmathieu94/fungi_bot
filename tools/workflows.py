@@ -4,7 +4,8 @@ import pandas as pd
 from .sql_tools import run_duckdb_query
 from .stats_tools import summarize_numeric_columns, compute_correlation
 from .plot_tools import make_plot
-
+from .history_helpers import AnalysisRecord
+from .history_store import save_analysis_record, list_analysis_history, get_analysis_record
 
 def _success(data: Dict[str, Any]) -> Dict[str, Any]:
     """Helper to wrap successful workflow results in ADK-style envelope."""
@@ -23,7 +24,8 @@ def _error(message: str) -> Dict[str, Any]:
         "error_message": message,
     }
 
-
+# Testing added history helper to this function 
+# Will incorporate the same thing in other workflows after 
 def assembly_quality_overview(limit: int = 1000) -> Dict[str, Any]:
     """
     High-level workflow for summarizing assembly quality using asm_stats.
@@ -41,6 +43,7 @@ def assembly_quality_overview(limit: int = 1000) -> Dict[str, Any]:
           - correlation info
           - plot metadata and image paths
           - any sub-step error messages, without failing the whole workflow.
+          - analysis_record: structured summary for long-term history.
 
     Args:
         limit: Maximum number of rows to pull from asm_stats.
@@ -61,7 +64,10 @@ def assembly_quality_overview(limit: int = 1000) -> Dict[str, Any]:
               "n50_hist_error": str or None,
               "n50_vs_total_scatter": {...} or None,
               "n50_vs_total_scatter_error": str or None
-            }
+            },
+            "analysis_record": {...} or None,
+            "history_save_status": "success" | "error" | None,
+            "history_save_error": str | None
           } | None,
           "error_message": str | None
         }
@@ -80,7 +86,7 @@ def assembly_quality_overview(limit: int = 1000) -> Dict[str, Any]:
             f"Failed to query asm_stats: {query_res.get('error_message', 'unknown error')}"
         )
 
-    qdata = query_res["data"] or {}
+    qdata = query_res.get("data") or {}
     rows = qdata.get("rows", [])
     columns = qdata.get("columns", [])
     row_count = qdata.get("row_count", 0)
@@ -103,7 +109,9 @@ def assembly_quality_overview(limit: int = 1000) -> Dict[str, Any]:
             column_names=["N50", "TOTAL_LENGTH"],
         )
         if summ_res.get("status") == "success":
-            summaries = (summ_res.get("data") or {}).get("summaries")
+            # NOTE: using key "summaries" to match your docstring
+            summaries = (summ_res.get("data") or {}).get("summaries") or \
+                        (summ_res.get("data") or {}).get("summary")
         else:
             summaries_error = summ_res.get("error_message")
     else:
@@ -161,7 +169,69 @@ def assembly_quality_overview(limit: int = 1000) -> Dict[str, Any]:
         n50_hist_error = "No rows returned from asm_stats to generate plots."
         n50_vs_total_scatter_error = n50_hist_error
 
-    # ---- 5) Collect everything into a single result ----
+    # ---- 5) Build analysis_record and save to local history ----
+    analysis_record_dict = None
+    history_save_status: str | None = None
+    history_save_error: str | None = None
+
+    if row_count > 0:
+        # Safely extract stats for the summary
+        n50_stats = (summaries or {}).get("N50", {}) if isinstance(summaries, dict) else {}
+        total_stats = (summaries or {}).get("TOTAL_LENGTH", {}) if isinstance(summaries, dict) else {}
+
+        n_genomes = n50_stats.get("count", row_count)
+        median_n50 = n50_stats.get("median")
+        median_total_length = total_stats.get("median")
+
+        corr_val = None
+        if isinstance(correlation, dict):
+            corr_val = correlation.get("correlation")
+
+        # Human-readable one-liner summary
+        pieces = [f"Assembly quality overview for {n_genomes} genomes."]
+        if median_n50 is not None:
+            pieces.append(f"Median N50 ≈ {median_n50}.")
+        if median_total_length is not None:
+            pieces.append(f"Median total assembly length ≈ {median_total_length}.")
+        if corr_val is not None:
+            pieces.append(f"Pearson correlation between N50 and total length ≈ {corr_val}.")
+        summary_text = " ".join(pieces)
+
+        # Figure paths: pull from the plot tool outputs (which are dicts from make_plot)
+        figure_paths: list[str] = []
+        if isinstance(n50_hist, dict):
+            path = n50_hist.get("image_path")
+            if path:
+                figure_paths.append(path)
+        if isinstance(n50_vs_total_scatter, dict):
+            path = n50_vs_total_scatter.get("image_path")
+            if path:
+                figure_paths.append(path)
+
+        result_stats = {
+            "n_genomes": n_genomes,
+            "row_count": row_count,
+            "median_n50": median_n50,
+            "median_total_length": median_total_length,
+            "correlation_n50_vs_total_length": corr_val,
+        }
+
+        record = AnalysisRecord.create(
+            workflow_name="assembly_quality_overview",
+            params={"limit": limit},
+            summary_text=summary_text,
+            result_stats=result_stats,
+            figure_paths=figure_paths,
+            tags=["asm_stats", "assembly_quality", "N50", "TOTAL_LENGTH"],
+        )
+        analysis_record_dict = record.to_dict()
+
+        # Save to local analysis_history.duckdb
+        save_res = save_analysis_record(analysis_record_dict)
+        history_save_status = save_res.get("status")
+        history_save_error = save_res.get("error_message")
+
+    # ---- 6) Collect everything into a single result ----
     result_data: Dict[str, Any] = {
         "limit": limit,
         "row_count": row_count,
@@ -175,9 +245,14 @@ def assembly_quality_overview(limit: int = 1000) -> Dict[str, Any]:
             "n50_vs_total_scatter": n50_vs_total_scatter,
             "n50_vs_total_scatter_error": n50_vs_total_scatter_error,
         },
+        "analysis_record": analysis_record_dict,
+        "history_save_status": history_save_status,
+        "history_save_error": history_save_error,
     }
 
     return _success(result_data)
+
+
 
 def genome_lifestyle_overview(
     min_species_per_guild: int = 5,

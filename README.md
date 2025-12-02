@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="images/fungibot.png" alt="FungiBot Logo" width="220"/>
+</p>
+
 # 📘 **FungiBot**  
 ### *Agentic SQL Analysis System for Fungal Genomes*
 
@@ -67,6 +71,10 @@ fungi_bot/
 ```
 
 ---
+
+<p align="center">
+  <img src="images/flow_diagram.png" alt="FungiBot Architecture Diagram" width="650"/>
+</p>
 
 # ⚙️ Installation
 

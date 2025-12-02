@@ -4,6 +4,8 @@ import os
 from typing import List, Dict, Any
 
 import duckdb
+from pathlib import Path
+
 
 # Path to your DuckDB file
 DEFAULT_DB = Path(__file__).resolve().parents[1] / "database" / "function.duckdb"

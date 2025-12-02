@@ -122,16 +122,6 @@ This launches an interactive prompt:
 
 ---
 
-### **2. Using the Python runner**
-
-Useful for embedding or custom workflows:
-
-```bash
-python run_fungibot.py
-```
-
----
-
 # 📊 Example Queries
 
 ### Assembly quality

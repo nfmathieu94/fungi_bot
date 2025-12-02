@@ -26,3 +26,6 @@ venv/
 
 # Figures made by bot (might want to add some later)
 figures/*
+
+# Temporary To-Do
+to-do.md

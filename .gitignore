@@ -7,6 +7,7 @@ __pycache__/
 *.sqlite
 *.db
 *.duckdb
+!database/test_function.duckdb
 *.cache
 
 # OS junk
@@ -20,6 +21,8 @@ venv/
 .env/
 .adk/
 
-# Jupyter checkpoints (if you add notebooks later)
+# Jupyter checkpoints (if adding notebooks later)
 .ipynb_checkpoints
 
+# Figures made by bot (might want to add some later)
+figures/*

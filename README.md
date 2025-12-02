@@ -72,7 +72,7 @@ fungi_bot/
 FungiBot uses a reproducible Conda environment.
 
 ```bash
-git clone https://github.com/<your-username>/fungibot.git
+git clone https://github.com/nfmathieu94/fungibot.git
 cd fungibot
 conda env create -f environment.yml
 conda activate fungibot

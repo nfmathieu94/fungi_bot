@@ -7,6 +7,7 @@ from .subagents import (
     sql_agent_tool,
     stats_plot_agent_tool,
     workflow_agent_tool,
+    history_agent_tool,
 )
 
 root_agent = Agent(
@@ -62,6 +63,7 @@ When answering:
         sql_agent_tool,
         stats_plot_agent_tool,
         workflow_agent_tool,
+        history_agent_tool,
         # Can add some low-level tools here if convenient,
         # but the main pattern is: coordinator → subagents via AgentTool.
     ],

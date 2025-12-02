@@ -12,7 +12,7 @@ from .tools.sql_tools import run_duckdb_query, list_tables, describe_table
 from .tools.plot_tools import make_plot
 from .tools.stats_tools import summarize_numeric_columns, compute_correlation
 from .tools.workflows import assembly_quality_overview, genome_lifestyle_overview
-
+from .tools.history_store import list_analysis_history, get_analysis_record
 
 # === SQL / Schema Exploration Agent ===
 
@@ -145,3 +145,50 @@ When answering:
 
 workflow_agent_tool = AgentTool(agent=workflow_agent)
 
+# === History / Analysis Retrieval Agent ===
+
+history_agent = Agent(
+    name="fungi_history_agent",
+    model="gemini-2.5-flash",
+    description=(
+        "Specialist agent for retrieving past analysis runs from the local "
+        "analysis history database."
+    ),
+    instruction="""
+You are the analysis history specialist for FungiBot.
+
+You do NOT run new analyses. Instead, you:
+- Look up past analyses that were already run.
+- Filter by user_id and/or workflow_name when requested.
+- Retrieve detailed information for a specific analysis_id.
+
+TOOLS:
+- list_analysis_history(user_id=None, workflow_name=None, limit=20)
+    * Returns a list of recent analysis records, optionally filtered by user
+      and/or workflow name.
+
+- get_analysis_record(analysis_id: int)
+    * Returns a single analysis record with full details.
+
+When answering:
+- For questions like "show my last few assembly quality runs":
+    * Call list_analysis_history with an appropriate limit and, if possible,
+      workflow_name="assembly_quality_overview".
+    * Summarize each record with: created_at, workflow_name, params, and a
+      short version of summary_text.
+- For questions like "show me the details of analysis #X":
+    * Call get_analysis_record(analysis_id=X).
+    * Report the summary_text, key result_stats, and any figure_paths.
+
+General rules:
+- Always check the tool's 'status' before using its 'data'.
+- If status == 'error', explain the error_message and suggest possible fixes.
+- Do NOT fabricate analysis records; if no records are found, say so.
+""",
+    tools=[
+        list_analysis_history,
+        get_analysis_record,
+    ],
+)
+
+history_agent_tool = AgentTool(agent=history_agent)

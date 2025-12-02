@@ -118,8 +118,40 @@ def list_analysis_history(
     limit: int = 20,
 ) -> Dict[str, Any]:
     """
-    List recent analyses, optionally filtered by user_id and/or workflow_name.
-    """
+    List recent analysis records from the local analysis_history DuckDB.
+
+    Args:
+        user_id: Optional user identifier to filter by. If None, return records
+                 for all users.
+        workflow_name: Optional workflow name to filter by
+                       (e.g. "assembly_quality_overview").
+        limit: Maximum number of records to return (default 20).
+
+    Returns:
+        ADK-style result dict:
+        {
+          "status": "success" | "error",
+          "data": {
+            "records": [
+              {
+                "analysis_id": int,
+                "app_name": str,
+                "user_id": str,
+                "workflow_name": str,
+                "created_at": str,
+                "summary_text": str,
+                "params": {...},
+                "result_stats": {...},
+                "figure_paths": [str, ...],
+                "tags": [str, ...]
+              },
+              ...
+            ]
+          } | None,
+          "error_message": str | None
+        }
+        """
+
     try:
         conn = _ensure_db()
 
@@ -193,6 +225,30 @@ def list_analysis_history(
 def get_analysis_record(analysis_id: int) -> Dict[str, Any]:
     """
     Retrieve a single analysis record by ID.
+
+    Args:
+        analysis_id: Integer ID of the analysis (as stored in analysis_history).
+
+    Returns:
+        ADK-style result dict:
+        {
+          "status": "success" | "error",
+          "data": {
+            "record": {
+              "analysis_id": int,
+              "app_name": str,
+              "user_id": str,
+              "workflow_name": str,
+              "created_at": str,
+              "summary_text": str,
+              "params": {...},
+              "result_stats": {...},
+              "figure_paths": [str, ...],
+              "tags": [str, ...]
+            }
+          } | None,
+          "error_message": str | None
+        }
     """
     try:
         conn = _ensure_db()

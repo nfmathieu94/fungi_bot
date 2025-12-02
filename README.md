@@ -12,7 +12,7 @@ FungiBot runs entirely **locally** (no cloud dependencies) and works smoothly on
 
 ### ✔ Natural-language SQL querying  
 Ask questions like:  
-> “Show me the N50 distribution for all Basidiomycota genomes.”
+> “Give me a high-level overview of assembly quality with limit 500.”
 
 FungiBot automatically generates safe SQL queries.
 
@@ -113,18 +113,11 @@ If `FUNGI_DB_PATH` is not set, FungiBot automatically loads the bundled **test d
 
 ### **1. Using the ADK CLI (recommended)**
 
-From the project root:
+From the project root to launch an interactive prompt:
 
 ```bash
 adk run .
 ```
-
-This launches an interactive prompt:
-
-```
-[user]: Give me a high-level overview of assembly quality with limit 200.
-```
-
 ---
 
 # 📊 Example Queries
@@ -134,11 +127,14 @@ This launches an interactive prompt:
 ```
 Give me a high-level overview of assembly quality with limit 200.
 ```
+```
+Show me the N50 distribution across all genomes.
+```
 
 ### CAZy enzymes
 
 ```
-Show me the coverage distribution of GH114 across species.
+Summarize the counts of CAZy HMM families per genome.
 ```
 
 ### Guild comparisons
@@ -150,7 +146,7 @@ How does genome size vary across ecological guilds?
 ### History lookup
 
 ```
-Show me my last 3 assembly quality overview runs.
+Show me my last assembly quality overview runs.
 ```
 
 ---
@@ -166,7 +162,7 @@ database/analysis_history.duckdb
 You can retrieve history using natural language:
 
 ```
-Find my last genome lifestyle overview run.
+Find my last ecological guilds overview run.
 ```
 
 Or list all analysis runs:

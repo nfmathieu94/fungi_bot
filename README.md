@@ -53,6 +53,7 @@ You can easily add new tools or subagents as your project grows.
 ```
 fungi_bot/
     agent.py                 # Main ADK agent definition
+    subagents.py             # Subagents used as tools for main agent
     tools/
         sql_tools.py         # DuckDB SQL wrappers
         plot_tools.py        # Automated plotting

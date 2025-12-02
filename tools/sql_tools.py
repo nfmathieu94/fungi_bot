@@ -6,8 +6,12 @@ from typing import List, Dict, Any
 import duckdb
 
 # Path to your DuckDB file
-DB_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "database", "function.duckdb")
+DEFAULT_DB = Path(__file__).resolve().parents[1] / "database" / "function.duckdb"
+TEST_DB = Path(__file__).resolve().parents[1] / "database" / "test_function.duckdb"
 
+DB_PATH = Path(
+    os.environ.get("FUNGI_DB_PATH", DEFAULT_DB)
+)
 
 def _success(data: Dict[str, Any]) -> Dict[str, Any]:
     """Helper to wrap successful tool results in ADK-style envelope."""

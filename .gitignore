@@ -7,6 +7,7 @@ __pycache__/
 *.sqlite
 *.db
 *.duckdb
+!database/test_function.duckdb
 *.cache
 
 # OS junk

@@ -1,7 +1,7 @@
 # 📘 **FungiBot**  
 ### *Agentic SQL Analysis System for Fungal Genomes*
 
-FungiBot is an intelligent agent built with **Google ADK** that enables natural-language exploration of a **DuckDB** database containing ~3,000 fungal genomes.  
+FungiBot is an intelligent agent built with **Google ADK** that enables natural-language exploration of a **DuckDB** database containing fungal genomes.  
 It is designed for researchers who want fast, interactive analysis of genome assemblies, ecological guilds, CAZy profiles, and more—directly through conversational queries.
 
 FungiBot runs entirely **locally** (no cloud dependencies) and works smoothly on HPC systems.
@@ -69,11 +69,16 @@ fungi_bot/
 
 # ⚙️ Installation
 
+First setup API key by creating an account at [Google AI Studio](https://aistudio.google.com/) 
+
+Follow instructions for generating an API key [here](https://aistudio.google.com/app/api-keys)  
+
 FungiBot uses a reproducible Conda environment.
 
 ```bash
 git clone git@github.com:nfmathieu94/fungi-bot.git
 cd fungibot
+echo "GOOGLE_API_KEY=YOURAPIKEY" > .env
 conda env create -f environment.yml
 conda activate fungibot
 ```

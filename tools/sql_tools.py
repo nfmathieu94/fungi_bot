@@ -8,12 +8,20 @@ from pathlib import Path
 
 
 # Path to your DuckDB file
-DEFAULT_DB = Path(__file__).resolve().parents[1] / "database" / "function.duckdb"
-TEST_DB = Path(__file__).resolve().parents[1] / "database" / "test_function.duckdb"
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_DB = PROJECT_ROOT / "database" / "function.duckdb"
+TEST_DB = PROJECT_ROOT / "database" / "test_function.duckdb"
 
-DB_PATH = Path(
-    os.environ.get("FUNGI_DB_PATH", DEFAULT_DB)
-)
+# Prefer explicit env var; otherwise use test DB if present; otherwise full DB
+_env_path = os.environ.get("FUNGI_DB_PATH")
+if _env_path:
+    DB_PATH = Path(_env_path)
+elif TEST_DB.exists():
+    DB_PATH = TEST_DB
+else:
+    DB_PATH = DEFAULT_DB
+
+
 
 def _success(data: Dict[str, Any]) -> Dict[str, Any]:
     """Helper to wrap successful tool results in ADK-style envelope."""
